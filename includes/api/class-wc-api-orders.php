@@ -78,8 +78,9 @@ class WC_API_Orders extends WC_API_Resource {
 
 		foreach( $query->posts as $order_id ) {
 
-			if ( ! $this->is_readable( $order_id ) )
+			if ( ! $this->is_readable( $order_id ) ) {
 				continue;
+			}
 
 			$orders[] = current( $this->get_order( $order_id, $fields ) );
 		}
@@ -103,8 +104,9 @@ class WC_API_Orders extends WC_API_Resource {
 		// ensure order ID is valid & user has permission to read
 		$id = $this->validate_request( $id, 'shop_order', 'read' );
 
-		if ( is_wp_error( $id ) )
+		if ( is_wp_error( $id ) ) {
 			return $id;
+		}
 
 		$order = new WC_Order( $id );
 
@@ -246,13 +248,15 @@ class WC_API_Orders extends WC_API_Resource {
 	 */
 	public function get_orders_count( $status = null, $filter = array() ) {
 
-		if ( ! empty( $status ) )
+		if ( ! empty( $status ) ) {
 			$filter['status'] = $status;
+		}
 
 		$query = $this->query_orders( $filter );
 
-		if ( ! current_user_can( 'read_private_shop_orders' ) )
+		if ( ! current_user_can( 'read_private_shop_orders' ) ) {
 			return new WP_Error( 'woocommerce_api_user_cannot_read_orders_count', __( 'You do not have permission to read the orders count', 'woocommerce' ), array( 'status' => 401 ) );
+		}
 
 		return array( 'count' => (int) $query->found_posts );
 	}
@@ -271,8 +275,9 @@ class WC_API_Orders extends WC_API_Resource {
 
 		$id = $this->validate_request( $id, 'shop_order', 'edit' );
 
-		if ( is_wp_error( $id ) )
+		if ( is_wp_error( $id ) ) {
 			return $id;
+		}
 
 		$order = new WC_Order( $id );
 
@@ -312,8 +317,9 @@ class WC_API_Orders extends WC_API_Resource {
 		// ensure ID is valid order ID
 		$id = $this->validate_request( $id, 'shop_order', 'read' );
 
-		if ( is_wp_error( $id ) )
+		if ( is_wp_error( $id ) ) {
 			return $id;
+		}
 
 		$args = array(
 			'post_id' => $id,

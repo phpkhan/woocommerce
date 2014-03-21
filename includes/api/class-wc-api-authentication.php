@@ -34,15 +34,17 @@ class WC_API_Authentication {
 	public function authenticate( $user ) {
 
 		// allow access to the index by default
-		if ( '/' === WC()->api->server->path )
-			return new WP_User(0);
+		if ( '/' === WC()->api->server->path ) {
+			return new WP_User( 0 );
+		}
 
 		try {
 
-			if ( is_ssl() )
+			if ( is_ssl() ) {
 				$user = $this->perform_ssl_authentication();
-			else
+			} else {
 				$user = $this->perform_oauth_authentication();
+			}
 
 			// check API key-specific permission
 			$this->check_api_key_permissions( $user );
@@ -65,19 +67,22 @@ class WC_API_Authentication {
 	 */
 	private function perform_ssl_authentication() {
 
-		if ( empty( $_SERVER['PHP_AUTH_USER'] ) )
+		if ( empty( $_SERVER['PHP_AUTH_USER'] ) ) {
 			throw new Exception( __( 'Consumer Key is missing', 'woocommerce' ), 404 );
+		}
 
-		if ( empty( $_SERVER['PHP_AUTH_PW'] ) )
+		if ( empty( $_SERVER['PHP_AUTH_PW'] ) ) {
 			throw new Exception( __( 'Consumer Secret is missing', 'woocommerce' ), 404 );
+		}
 
 		$consumer_key    = $_SERVER['PHP_AUTH_USER'];
 		$consumer_secret = $_SERVER['PHP_AUTH_PW'];
 
 		$user = $this->get_user_by_consumer_key( $consumer_key );
 
-		if ( ! $this->is_consumer_secret_valid( $user, $consumer_secret ) )
-			throw new Exception( __( 'Consumer Secret is invalid', 'woocommerce'), 401 );
+		if ( ! $this->is_consumer_secret_valid( $user, $consumer_secret ) ) {
+			throw new Exception( __( 'Consumer Secret is invalid', 'woocommerce' ), 401 );
+		}
 
 		return $user;
 	}
@@ -108,8 +113,9 @@ class WC_API_Authentication {
 		// check for required OAuth parameters
 		foreach ( $param_names as $param_name ) {
 
-			if ( empty( $params[ $param_name ] ) )
+			if ( empty( $params[$param_name] ) ) {
 				throw new Exception( sprintf( __( '%s parameter is missing', 'woocommerce' ), $param_name ), 404 );
+			}
 		}
 
 		// fetch WP user by consumer key
@@ -147,8 +153,9 @@ class WC_API_Authentication {
 
 		$users = $user_query->get_results();
 
-		if ( empty( $users[0] ) )
+		if ( empty( $users[0] ) ) {
 			throw new Exception( __( 'Consumer Key is invalid', 'woocommerce' ), 401 );
+		}
 
 		return $users[0];
 	}
@@ -197,8 +204,9 @@ class WC_API_Authentication {
 		array_walk( $params, array( $this, 'normalize_parameters' ) );
 
 		// sort parameters
-		if ( ! uksort( $params, 'strcmp' ) )
+		if ( ! uksort( $params, 'strcmp' ) ) {
 			throw new Exception( __( 'Invalid Signature - failed to sort parameters', 'woocommerce' ), 401 );
+		}
 
 		// form query string
 		$query_params = array();
@@ -210,15 +218,17 @@ class WC_API_Authentication {
 
 		$string_to_sign = $http_method . '&' . $base_request_uri . '&' . $query_string;
 
-		if ( $params['oauth_signature_method'] !== 'HMAC-SHA1' && $params['oauth_signature_method'] !== 'HMAC-SHA256' )
+		if ( $params['oauth_signature_method'] !== 'HMAC-SHA1' && $params['oauth_signature_method'] !== 'HMAC-SHA256' ) {
 			throw new Exception( __( 'Invalid Signature - signature method is invalid', 'woocommerce' ), 401 );
+		}
 
 		$hash_algorithm = strtolower( str_replace( 'HMAC-', '', $params['oauth_signature_method'] ) );
 
 		$signature = base64_encode( hash_hmac( $hash_algorithm, $string_to_sign, $user->woocommerce_api_consumer_secret, true ) );
 
-		if ( $signature !== $consumer_signature )
+		if ( $signature !== $consumer_signature ) {
 			throw new Exception( __( 'Invalid Signature - provided signature does not match', 'woocommerce' ), 401 );
+		}
 	}
 
 	/**
@@ -252,24 +262,28 @@ class WC_API_Authentication {
 
 		$valid_window = 15 * 60; // 15 minute window
 
-		if ( ( $timestamp < time() - $valid_window ) ||  ( $timestamp > time() + $valid_window ) )
+		if ( ( $timestamp < time() - $valid_window ) || ( $timestamp > time() + $valid_window ) ) {
 			throw new Exception( __( 'Invalid timestamp', 'woocommerce' ) );
+		}
 
 		$used_nonces = $user->woocommerce_api_nonces;
 
-		if ( empty( $used_nonces ) )
+		if ( empty( $used_nonces ) ) {
 			$used_nonces = array();
+		}
 
-		if ( in_array( $nonce, $used_nonces ) )
+		if ( in_array( $nonce, $used_nonces ) ) {
 			throw new Exception( __( 'Invalid nonce - nonce has already been used', 'woocommerce' ), 401 );
+		}
 
 		$used_nonces[ $timestamp ] = $nonce;
 
 		// remove expired nonces
 		foreach( $used_nonces as $nonce_timestamp => $nonce ) {
 
-			if ( $nonce_timestamp < ( time() - $valid_window ) )
-				unset( $used_nonces[ $nonce_timestamp ] );
+			if ( $nonce_timestamp < ( time() - $valid_window ) ) {
+				unset( $used_nonces[$nonce_timestamp] );
+			}
 		}
 
 		update_user_meta( $user->ID, 'woocommerce_api_nonces', $used_nonces );

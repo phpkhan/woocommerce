@@ -75,8 +75,9 @@ class WC_API_Reports extends WC_API_Resource {
 		// check user permissions
 		$check = $this->validate_request();
 
-		if ( is_wp_error( $check ) )
+		if ( is_wp_error( $check ) ) {
 			return $check;
+		}
 
 		// set date filtering
 		$this->setup_report( $filter );
