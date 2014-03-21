@@ -229,28 +229,21 @@ class WC_Admin_Report {
 			$query['limit'] = "LIMIT {$limit}";
 		}
 
-		$query      = apply_filters( 'woocommerce_reports_get_order_report_query', $query );
-		$query      = implode( ' ', $query );
-		$query_hash = md5( $query_type . $query );
+		$query          = apply_filters( 'woocommerce_reports_get_order_report_query', $query );
+		$query          = implode( ' ', $query );
+		$query_hash     = md5( $query_type . $query );
+		$cached_results = get_transient( strtolower( get_class( $this ) ) );
 
-		if ( $debug )
+		if ( $debug ) {
 			var_dump( $query );
-
-		if ( $debug || $nocache || ( false === ( $result = get_transient( 'wc_report_' . $query_hash ) ) ) ) {
-			$result = apply_filters( 'woocommerce_reports_get_order_report_data', $wpdb->$query_type( $query ), $data );
-
-			if ( $filter_range ) {
-				if ( date('Y-m-d', strtotime( $this->end_date ) ) == date('Y-m-d', current_time( 'timestamp' ) ) ) {
-					$expiration = 60 * 60 * 1; // 1 hour
-				} else {
-					$expiration = 60 * 60 * 24; // 24 hour
-				}
-			} else {
-				$expiration = 60 * 60 * 24; // 24 hour
-			}
-
-			set_transient( 'wc_report_' . $query_hash, $result, $expiration );
 		}
+
+		if ( $debug || $nocache || false === $cached_results || ! isset( $cached_results[ $query_hash ] ) ) {
+			$cached_results[ $query_hash ] = apply_filters( 'woocommerce_reports_get_order_report_data', $wpdb->$query_type( $query ), $data );
+			set_transient( strtolower( get_class( $this ) ), $cached_results, DAY_IN_SECONDS );
+		}
+
+		$result = $cached_results[ $query_hash ];
 
 		return $result;
 	}
@@ -274,13 +267,13 @@ class WC_Admin_Report {
 		for ( $i = 0; $i <= $interval; $i ++ ) {
 			switch ( $group_by ) {
 				case 'day' :
-					$time = strtotime( date( 'Ymd', strtotime( "+{$i} DAY", $start_date ) ) ) * 1000;
+					$time = strtotime( date( 'Ymd', strtotime( "+{$i} DAY", $start_date ) ) ) . '000';
 				break;
 				case 'month' :
-					$time = strtotime( date( 'Ym', strtotime( "+{$i} MONTH", $start_date ) ) . '01' ) * 1000;
+					$time = strtotime( date( 'Ym', strtotime( "+{$i} MONTH", $start_date ) ) . '01' ) . '000';
 				break;
 			}
-
+			
 			if ( ! isset( $prepared_data[ $time ] ) )
 				$prepared_data[ $time ] = array( esc_js( $time ), 0 );
 		}
@@ -288,10 +281,10 @@ class WC_Admin_Report {
 		foreach ( $data as $d ) {
 			switch ( $group_by ) {
 				case 'day' :
-					$time = strtotime( date( 'Ymd', strtotime( $d->$date_key ) ) ) * 1000;
+					$time = strtotime( date( 'Ymd', strtotime( $d->$date_key ) ) ) . '000';
 				break;
 				case 'month' :
-					$time = strtotime( date( 'Ym', strtotime( $d->$date_key ) ) . '01' ) * 1000;
+					$time = strtotime( date( 'Ym', strtotime( $d->$date_key ) ) . '01' ) . '000';
 				break;
 			}
 

@@ -511,7 +511,11 @@ class WC_Cart {
 		            } else {
 						$value              = apply_filters( 'woocommerce_variation_option_name', $value );
 						$product_attributes = $cart_item['data']->get_attributes();
-						$label              = wc_attribute_label( $product_attributes[ str_replace( 'attribute_', '', urldecode( $name ) ) ]['name'] );
+						if ( isset( $product_attributes[ str_replace( 'attribute_', '', $name ) ] ) ) {
+							$label = wc_attribute_label( $product_attributes[ str_replace( 'attribute_', '', $name ) ]['name'] );
+						} else {
+							$label = $name;
+						}
 					}
 
 					$item_data[] = array(
@@ -1754,8 +1758,8 @@ class WC_Cart {
 
 					if ( $coupon->is_valid() && ! $coupon->apply_before_tax() && $coupon->is_valid_for_product( $values['data'] ) ) {
 						$discount_amount       = $coupon->get_discount_amount( $price, $values );
-						$this->discount_total += $discount_amount * $values['quantity'];
-						$this->increase_coupon_discount_amount( $code, $discount_amount * $values['quantity'] );
+						$this->discount_total += $discount_amount;
+						$this->increase_coupon_discount_amount( $code, $discount_amount );
 						$this->increase_coupon_applied_count( $code, $values['quantity'] );
 					}
 				}

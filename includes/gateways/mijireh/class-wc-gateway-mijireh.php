@@ -264,10 +264,10 @@ class WC_Gateway_Mijireh extends WC_Payment_Gateway {
 		$mj_order->discount 		= $wc_order->get_total_discount();
 
 		if ( get_option( 'woocommerce_prices_include_tax' ) == 'yes' ) {
-			$mj_order->shipping 		= $wc_order->get_total_shipping() + $wc_order->get_shipping_tax();
+			$mj_order->shipping 		= round( $wc_order->get_total_shipping() + $wc_order->get_shipping_tax(), 2 );
 			$mj_order->show_tax			= false;
 		} else {
-			$mj_order->shipping 		= $wc_order->get_total_shipping();
+			$mj_order->shipping 		= round( $wc_order->get_total_shipping(), 2 );
 			$mj_order->tax 				= $wc_order->get_total_tax();
 		}
 
@@ -275,7 +275,7 @@ class WC_Gateway_Mijireh extends WC_Payment_Gateway {
 		$mj_order->add_meta_data( 'wc_order_id', $order_id );
 
 		// Set URL for mijireh payment notificatoin - use WC API
-		$mj_order->return_url 		= str_replace( 'https:', 'http:', add_query_arg( 'wc-api', 'WC_Gateway_Mijireh', home_url( '/' ) ) );
+		$mj_order->return_url 		= WC()->api_request_url( 'WC_Gateway_Mijireh' );
 
 		// Identify woocommerce
 		$mj_order->partner_id 		= 'woo';
